@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.bak
+.claude/
+data/*.sqlite
+data/*.sqlite-journal
+data/*.sqlite-wal
+data/*.sqlite-shm
+data/tunnel_url.txt
+backups/*.sqlite
+logs/
+*.log
+debug*.sqlite*
+.pm2/

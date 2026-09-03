@@ -1,0 +1,63 @@
+.move-grid {
+  width: 100%; max-width: 420px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin-top: 18px;
+}
+
+.move-btn {
+  padding: 14px 10px;
+  font-size: 14px; font-weight: 800; letter-spacing: 0.2px;
+  border: none; border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent), #ff2e63);
+  color: var(--accent-text);
+  box-shadow: 0 6px 18px rgba(255, 84, 112, 0.3);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.2s ease;
+}
+.move-btn:active { transform: scale(0.96); }
+.move-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+.move-btn .move-type { display: block; font-size: 11px; font-weight: 600; opacity: 0.85; margin-top: 2px; }
+
+.turn-status {
+  width: 100%; max-width: 420px;
+  text-align: center; font-size: 14px; font-weight: 700;
+  color: var(--hint); margin: 10px 0 0;
+}
+.turn-status.your-turn { color: var(--hp-green); }
+
+/* ---- Team bench (3v3, Pokémon GO-style) ---- */
+.bench-row { display: flex; gap: 6px; justify-content: center; margin: 2px 0 6px; }
+.bench-icon {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--secondary-bg); border: 2px solid rgba(255,255,255,0.12);
+  overflow: hidden; transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+.bench-icon img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+.bench-icon.active { border-color: var(--accent); box-shadow: 0 0 8px rgba(255,84,112,0.6); }
+.bench-icon.fainted { opacity: 0.3; filter: grayscale(1); }
+
+/* ---- Swap-in toast, Pokémon GO-style "Go!" moment ---- */
+.swap-toast {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) scale(0.7);
+  background: rgba(15,17,23,0.92); border: 1px solid var(--accent);
+  color: var(--text); font-size: 12px; font-weight: 800;
+  padding: 6px 12px; border-radius: 999px;
+  opacity: 0; pointer-events: none; white-space: nowrap;
+}
+.swap-toast.show { animation: swapPop 1.4s ease forwards; }
+@keyframes swapPop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+  25% { transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -60%) scale(0.9); }
+}
+
+/* ---- Sprite swap-in slide, plays whenever the active mon's species changes ---- */
+.sprite.swapping-in { animation: spriteSwapIn 0.5s ease; }
+@keyframes spriteSwapIn {
+  0% { opacity: 0; transform: translateX(24px) scale(0.85); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}

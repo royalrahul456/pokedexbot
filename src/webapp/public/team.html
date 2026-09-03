@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Team Builder</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="team.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="screen-loading" class="screen active">
+      <div class="spinner"></div>
+      <p>Loading your collection...</p>
+    </div>
+
+    <div id="screen-error" class="screen">
+      <div class="error-icon">⚠️</div>
+      <p id="error-text">Something went wrong.</p>
+    </div>
+
+    <div id="screen-empty" class="screen">
+      <div class="big-icon">🐾</div>
+      <h2>Not enough Pokémon yet</h2>
+      <p>You need at least 3 different Pokémon in your collection to build a team — go catch some more!</p>
+    </div>
+
+    <div id="screen-team" class="screen">
+      <h1 class="team-title">🐾 Build Your Team</h1>
+      <p class="team-sub">Pick exactly 3 Pokémon — this team is used instantly for both Raids and PvP Battles. Own more than one of the same Pokémon? It shows up as separate cards — tap any of them to select or deselect.</p>
+      <p class="team-count"><span id="pick-count">0</span>/3 selected</p>
+
+      <div class="team-grid" id="team-grid"></div>
+
+      <button id="save-btn" class="attack-btn save-btn" disabled>💾 Save Team</button>
+      <p class="team-status" id="team-status"></p>
+    </div>
+  </div>
+  <script src="team.js"></script>
+</body>
+</html>

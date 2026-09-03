@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Raid Battle Arena</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="screen-loading" class="screen active">
+      <div class="spinner"></div>
+      <p>Connecting to the raid...</p>
+    </div>
+
+    <div id="screen-error" class="screen">
+      <div class="error-icon">⚠️</div>
+      <p id="error-text">Something went wrong.</p>
+    </div>
+
+    <div id="screen-lobby" class="screen">
+      <h1 class="boss-name" id="lobby-boss-name"></h1>
+      <div class="type-badges" id="lobby-boss-types"></div>
+      <img id="lobby-boss-sprite" class="lobby-sprite" alt="" />
+      <p class="lobby-sub">⏳ Battle starts in <span id="lobby-countdown">--</span></p>
+      <p class="lobby-players"><span id="lobby-player-count">0</span> trainers ready</p>
+    </div>
+
+    <div id="screen-battle" class="screen">
+      <div class="arena">
+        <div class="combatant boss-side">
+          <div class="name-row">
+            <span class="name" id="boss-name"></span>
+            <span class="type-badges" id="boss-types"></span>
+          </div>
+          <div class="sprite-wrap">
+            <img id="boss-sprite" class="sprite boss-sprite" alt="" />
+            <div class="hit-flash" id="boss-hit-flash"></div>
+          </div>
+          <div class="hp-bar">
+            <div class="hp-fill boss-hp-fill" id="boss-hp-fill"></div>
+          </div>
+          <div class="hp-text" id="boss-hp-text">-- / --</div>
+        </div>
+
+        <div class="vs">VS</div>
+
+        <div class="combatant player-side">
+          <div class="name-row">
+            <span class="name" id="mon-name"></span>
+            <span class="type-badges" id="mon-types"></span>
+          </div>
+          <div class="sprite-wrap">
+            <img id="mon-sprite" class="sprite mon-sprite" alt="" />
+            <div class="hit-flash" id="mon-hit-flash"></div>
+          </div>
+          <div class="hp-bar">
+            <div class="hp-fill mon-hp-fill" id="mon-hp-fill"></div>
+          </div>
+          <div class="hp-text" id="mon-hp-text">-- / --</div>
+          <div class="team-dots" id="team-dots"></div>
+        </div>
+      </div>
+
+      <div class="damage-popup" id="damage-popup"></div>
+
+      <p class="spectator-note" id="spectator-note">👀 You're watching this raid — you didn't join, so you can't attack. Tap ⚔️ Join Raid in the group chat next time!</p>
+      <button id="attack-btn" class="attack-btn">⚔️ ATTACK</button>
+
+      <div class="status-row">
+        <span id="player-count-row">👥 --/--</span>
+        <span id="time-remaining-row">⏳ --</span>
+      </div>
+
+      <div class="battle-log" id="battle-log"></div>
+    </div>
+
+    <div id="screen-eliminated" class="screen">
+      <div class="big-icon">💀</div>
+      <h2>You've been knocked out!</h2>
+      <p>All 3 of your Pokémon fainted. Watch the raid continue below.</p>
+      <div class="battle-log" id="battle-log-eliminated"></div>
+    </div>
+
+    <div id="screen-ended" class="screen">
+      <div class="big-icon" id="ended-icon">🏁</div>
+      <h2 id="ended-title">Raid Ended</h2>
+      <p id="ended-sub"></p>
+      <button id="close-btn" class="attack-btn">Close</button>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

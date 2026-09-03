@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Trade Window</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="trade.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="screen-loading" class="screen active">
+      <div class="spinner"></div>
+      <p>Loading trade...</p>
+    </div>
+
+    <div id="screen-error" class="screen">
+      <div class="error-icon">⚠️</div>
+      <p id="error-text">Something went wrong.</p>
+    </div>
+
+    <div id="screen-ended" class="screen">
+      <div class="big-icon" id="ended-icon">✅</div>
+      <h2 id="ended-title">Trade Complete</h2>
+      <p id="ended-text"></p>
+    </div>
+
+    <div id="screen-trade" class="screen">
+      <h1 class="trade-title">🔄 Trade Window</h1>
+      <p class="trade-sub">Trading with <span id="other-name">—</span></p>
+
+      <div class="trade-card their-card">
+        <div class="trade-card-header">
+          <span>📥 Their Offer</span>
+          <span class="ready-pill" id="their-ready">⏳ Building</span>
+        </div>
+        <div class="offer-chips" id="their-chips"></div>
+        <div class="offer-coins" id="their-coins"></div>
+      </div>
+
+      <div class="trade-card your-card">
+        <div class="trade-card-header">
+          <span>📤 Your Offer</span>
+          <span class="ready-pill" id="your-ready">⏳ Building</span>
+        </div>
+        <div class="offer-chips" id="your-chips"></div>
+        <div class="offer-coins" id="your-coins"></div>
+        <div class="your-actions">
+          <button class="pick-btn" id="add-pokemon-btn">🐾 Add Pokémon</button>
+          <button class="pick-btn" id="add-item-btn">🎒 Add Item</button>
+        </div>
+        <div class="coin-row">
+          <input type="number" id="coin-input" min="0" placeholder="Coins to offer (optional)" />
+          <button id="set-coins-btn">Set</button>
+        </div>
+      </div>
+
+      <p class="trade-status" id="trade-status"></p>
+
+      <button id="ready-btn" class="attack-btn ready-btn">✅ Mark Ready</button>
+      <button id="cancel-btn" class="cancel-btn">❌ Cancel Trade</button>
+    </div>
+
+    <div id="screen-pick-pokemon" class="screen">
+      <h1 class="trade-title">🐾 Pick Pokémon to Offer</h1>
+      <p class="trade-sub">Tap to add/remove from your offer.</p>
+      <div class="pick-grid" id="pokemon-grid"></div>
+      <button class="pick-back-btn" id="pokemon-back-btn">⬅️ Back to Trade</button>
+    </div>
+
+    <div id="screen-pick-item" class="screen">
+      <h1 class="trade-title">🎒 Pick Items to Offer</h1>
+      <p class="trade-sub">Use +/- to set how many of each to offer.</p>
+      <div class="pick-list" id="item-list"></div>
+      <button class="pick-back-btn" id="item-back-btn">⬅️ Back to Trade</button>
+    </div>
+  </div>
+  <script src="trade.js"></script>
+</body>
+</html>
