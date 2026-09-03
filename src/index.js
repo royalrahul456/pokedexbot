@@ -173,12 +173,12 @@ const GUIDE_TEXT = [
 const settings = require('./db/settings');
 
 const START_TEXT = [
-  brandTag(),
-  '',
   '<blockquote>',
+  bold('📟 PokéDex Bot'),
+  '',
   bold('🎮 Welcome to PokéDex Bot!'),
   '',
-  bold('Catch Pokémon, complete missions, collect rare finds, battle trainers & climb the leaderboard! 🐾🏆'),
+  'Catch Pokémon, complete missions, collect rare finds, battle trainers & climb the leaderboard! 🐾🏆',
   '',
   '✨ ' + bold('Ready to begin your journey?'),
   '',
@@ -205,7 +205,7 @@ async function sendStartMessage(ctx) {
   const keyboard = startKeyboard(botUsername);
 
   const startVideo = settings.getSetting('start_video_url', null);
-  const startPic = settings.getSetting('start_pic_url', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png');
+  const startPic = settings.getSetting('start_pic_url', 'https://img.pokemondb.net/artwork/large/pikachu.jpg');
 
   if (startVideo) {
     try {
@@ -214,7 +214,7 @@ async function sendStartMessage(ctx) {
       try {
         return await ctx.replyWithAnimation(startVideo, { caption: START_TEXT, ...HTML, ...keyboard });
       } catch (err2) {
-        console.error('Failed to send start video, attempting photo fallback:', err2.message);
+        console.error('Failed to send start video:', err2.message);
       }
     }
   }
@@ -223,7 +223,12 @@ async function sendStartMessage(ctx) {
     try {
       return await ctx.replyWithPhoto(startPic, { caption: START_TEXT, ...HTML, ...keyboard });
     } catch (err) {
-      console.error('Failed to send start cover photo, falling back to text:', err.message);
+      console.error('Failed to send start cover photo:', err.message);
+      try {
+        return await ctx.replyWithPhoto('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png', { caption: START_TEXT, ...HTML, ...keyboard });
+      } catch (err2) {
+        console.error('Failed to send fallback cover photo:', err2.message);
+      }
     }
   }
 
