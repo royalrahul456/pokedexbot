@@ -196,23 +196,58 @@ function guideKeyboard() {
   return Markup.inlineKeyboard([Markup.button.callback('📖 Full Guide', 'show_guide')]);
 }
 
-function startKeyboard(botUsername) {
-  const buttons = [];
+function allCommandsKeyboard(botUsername) {
+  const rows = [];
   if (botUsername) {
-    buttons.push([Markup.button.url('➕ Add to Group', `https://t.me/${botUsername}?startgroup=true`)]);
+    rows.push([Markup.button.url('➕ Add to Group', `https://t.me/${botUsername}?startgroup=true`)]);
   }
-  buttons.push([
-    Markup.button.callback('📖 Full Guide', 'show_guide'),
-    Markup.button.callback('🎮 Commands Menu', 'show_help'),
+  rows.push([
+    Markup.button.callback('👤 Profile', 'cmd:profile'),
+    Markup.button.callback('🏆 Leaderboard', 'cmd:leaderboard'),
+    Markup.button.callback('🔥 Check-in', 'cmd:checkin'),
   ]);
-  return Markup.inlineKeyboard(buttons);
+  rows.push([
+    Markup.button.callback('🎡 Spin', 'cmd:spin'),
+    Markup.button.callback('📦 Chest', 'cmd:chest'),
+    Markup.button.callback('❓ Quiz', 'cmd:quiz'),
+  ]);
+  rows.push([
+    Markup.button.callback('⚔️ Battle', 'cmd:battle'),
+    Markup.button.callback('🎮 Games', 'cmd:games'),
+    Markup.button.callback('🎒 Inventory', 'cmd:inventory'),
+  ]);
+  rows.push([
+    Markup.button.callback('📂 Collection', 'cmd:collection'),
+    Markup.button.callback('🛍️ Shop', 'cmd:shop'),
+    Markup.button.callback('🥚 Breed', 'cmd:breed'),
+  ]);
+  rows.push([
+    Markup.button.callback('📇 Friends', 'cmd:friends'),
+    Markup.button.callback('🤝 Invite', 'cmd:invite'),
+    Markup.button.callback('📖 Full Guide', 'show_guide'),
+  ]);
+  return Markup.inlineKeyboard(rows);
 }
 
 async function sendStartMessage(ctx) {
   referralFeature.handleReferralStart(ctx);
   const botUsername = ctx.botInfo?.username;
-  const keyboard = startKeyboard(botUsername);
+  const keyboard = allCommandsKeyboard(botUsername);
+
+  const startVideo = settings.getSetting('start_video_url', null);
   const startPic = settings.getSetting('start_pic_url', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png');
+
+  if (startVideo) {
+    try {
+      return await ctx.replyWithVideo(startVideo, { caption: START_TEXT, ...HTML, ...keyboard });
+    } catch (err) {
+      try {
+        return await ctx.replyWithAnimation(startVideo, { caption: START_TEXT, ...HTML, ...keyboard });
+      } catch (err2) {
+        console.error('Failed to send start video, attempting photo fallback:', err2.message);
+      }
+    }
+  }
 
   if (startPic) {
     try {
@@ -221,6 +256,7 @@ async function sendStartMessage(ctx) {
       console.error('Failed to send start cover photo, falling back to text:', err.message);
     }
   }
+
   return ctx.reply(START_TEXT, { ...HTML, ...keyboard });
 }
 
@@ -242,14 +278,58 @@ bot.action('show_help', async (ctx) => {
   await ctx.reply(HELP_TEXT, { ...HTML, ...guideKeyboard() });
 });
 
-// Admin commands to update/reset the /start cover picture
+// Command Callback Handlers
+bot.action('cmd:profile', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return profileFeature.showProfile(ctx); });
+bot.action('cmd:leaderboard', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return profileFeature.showLeaderboard(ctx); });
+bot.action('cmd:checkin', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return checkinFeature.handleCheckin(ctx); });
+bot.action('cmd:spin', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return spinChestFeature.handleSpin(ctx); });
+bot.action('cmd:chest', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return spinChestFeature.handleChest(ctx); });
+bot.action('cmd:quiz', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return quizFeature.startQuiz(ctx); });
+bot.action('cmd:battle', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return ctx.reply('⚔️ Send /battle in a group or reply to a trainer to challenge them!'); });
+bot.action('cmd:games', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return gamesFeature.showGamesMenu(ctx); });
+bot.action('cmd:inventory', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return inventoryFeature.showInventory(ctx); });
+bot.action('cmd:collection', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return collectionFeature.showCollection(ctx); });
+bot.action('cmd:shop', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return shopFeature.showShop(ctx); });
+bot.action('cmd:breed', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return breedFeature.handleBreedCommand(ctx); });
+bot.action('cmd:friends', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return friendsFeature.showFriends(ctx); });
+bot.action('cmd:invite', async (ctx) => { try { await ctx.answerCbQuery(); } catch (e) {} return referralFeature.showInviteLink(ctx); });
+
+// Admin commands to update/reset start media (Video / Photo)
+bot.command(['setstartvideo', 'setstartanim'], async (ctx) => {
+  if (!ADMIN_IDS.includes(ctx.from.id)) {
+    return ctx.reply('❌ Admin command only.');
+  }
+
+  let videoUrlOrId = null;
+  const textArg = ctx.message.text.split(' ').slice(1).join(' ').trim();
+  if (textArg && (textArg.startsWith('http://') || textArg.startsWith('https://'))) {
+    videoUrlOrId = textArg;
+  }
+
+  if (!videoUrlOrId && (ctx.message.video || ctx.message.animation)) {
+    const media = ctx.message.video || ctx.message.animation;
+    videoUrlOrId = media.file_id;
+  }
+
+  if (!videoUrlOrId && ctx.message.reply_to_message && (ctx.message.reply_to_message.video || ctx.message.reply_to_message.animation)) {
+    const media = ctx.message.reply_to_message.video || ctx.message.reply_to_message.animation;
+    videoUrlOrId = media.file_id;
+  }
+
+  if (!videoUrlOrId) {
+    return ctx.reply('⚠️ Please send a video URL (e.g. `/setstartvideo https://...`) or reply to a video/GIF with `/setstartvideo`.', HTML);
+  }
+
+  settings.setSetting('start_video_url', videoUrlOrId);
+  return ctx.reply('✅ Start video cover updated successfully! /start will now play this video/animation.', HTML);
+});
+
 bot.command(['setstartpic', 'setstartcover'], async (ctx) => {
   if (!ADMIN_IDS.includes(ctx.from.id)) {
     return ctx.reply('❌ Admin command only.');
   }
 
   let photoUrlOrId = null;
-
   const textArg = ctx.message.text.split(' ').slice(1).join(' ').trim();
   if (textArg && (textArg.startsWith('http://') || textArg.startsWith('https://'))) {
     photoUrlOrId = textArg;
@@ -264,20 +344,21 @@ bot.command(['setstartpic', 'setstartcover'], async (ctx) => {
   }
 
   if (!photoUrlOrId) {
-    return ctx.reply('⚠️ Please send a photo URL (e.g. `/setstartpic https://...`) or reply to an image with `/setstartpic` to update the cover image.', HTML);
+    return ctx.reply('⚠️ Please send a photo URL (e.g. `/setstartpic https://...`) or reply to an image with `/setstartpic`.', HTML);
   }
 
   settings.setSetting('start_pic_url', photoUrlOrId);
-  return ctx.reply('✅ Start cover photo updated successfully! Users sending /start will now see this cover photo.', HTML);
+  return ctx.reply('✅ Start cover photo updated successfully!', HTML);
 });
 
-bot.command('resetstartpic', async (ctx) => {
+bot.command('resetstartmedia', async (ctx) => {
   if (!ADMIN_IDS.includes(ctx.from.id)) {
     return ctx.reply('❌ Admin command only.');
   }
 
+  settings.setSetting('start_video_url', '');
   settings.setSetting('start_pic_url', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png');
-  return ctx.reply('✅ Start cover photo reset to default Pikachu official artwork!', HTML);
+  return ctx.reply('✅ Start media reset to default!', HTML);
 });
 
 // Register the group and kick off its spawn loop whenever the bot is added,

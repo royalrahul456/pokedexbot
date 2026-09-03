@@ -15,15 +15,26 @@ function italic(str) {
   return `<i>${str}</i>`;
 }
 
+function code(str) {
+  return `<code>${str}</code>`;
+}
+
+function pre(str) {
+  return `<pre>${str}</pre>`;
+}
+
+function spoiler(str) {
+  return `<tg-spoiler>${str}</tg-spoiler>`;
+}
+
 const HTML = { parse_mode: 'HTML' };
 
 // Consistent brand identity — a small tag line prefixed to major broadcast messages
-// (mission, guide, announcements, etc.) so every feature feels like one product.
 const BRAND_NAME = 'PokéDex Bot';
 const BRAND_EMOJI = '📟';
 
 function brandTag() {
-  return italic(`${BRAND_EMOJI} ${BRAND_NAME}`);
+  return code(`${BRAND_EMOJI} ${BRAND_NAME}`);
 }
 
-module.exports = { escapeHtml, bold, italic, HTML, BRAND_NAME, BRAND_EMOJI, brandTag };
+module.exports = { escapeHtml, bold, italic, code, pre, spoiler, HTML, BRAND_NAME, BRAND_EMOJI, brandTag };
