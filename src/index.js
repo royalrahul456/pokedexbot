@@ -97,6 +97,8 @@ const BOT_COMMANDS = [
 
 const HELP_TEXT = [
   brandTag(),
+  '',
+  '<blockquote>',
   bold('🎮 Commands'),
   '',
   '👤 /profile — View your trainer profile',
@@ -110,72 +112,62 @@ const HELP_TEXT = [
   '📂 /collection — Browse your Pokémon, items, and more by category',
   '🛍️ /shop — Spend coins on titles & badges shown on your profile',
   '🛒 /store — Spend Gold (a separate premium currency, DM only) on exclusive Pokémon',
-  '🔄 /trade — Reply to another trainer\'s message to trade Pokémon, items, and/or Coins — works for a straight swap or a paid deal (offer Coins for their Pokémon/items). Opens a private Trade Window to build your offer. /canceltrade cancels your pending trade.',
+  '🔄 /trade — Reply to another trainer\'s message to trade Pokémon, items, and/or Coins',
   '🎟️ /redeem CODE — Redeem a promo code for XP/coins',
   '✨ /use &lt;item&gt; — Use a consumable item, e.g. /use shiny_ticket',
   '🥚 /egg — Incubate an egg from /spin, /chest, or /breed, then hatch it into a new Pokémon',
-  '🥚 /breed — Breed two of your own Pokémon, or reply to a friend to breed with theirs (both get an egg!)',
-  '⚔️ /jointeam red (or blue) — Join a team; /warstatus checks the current Team War standings',
+  '🥚 /breed — Breed two of your own Pokémon, or reply to a friend to breed with theirs',
+  '⚔️ /jointeam red (or blue) — Join a team; /warstatus checks Team War standings',
   '🏆 /raidstats — Check your Boss Raid stats in this group',
-  '🐾 /myteam — Pick your 3-Pokémon team once — used instantly for both Boss Raids and PvP Battles',
+  '🐾 /myteam — Pick your 3-Pokémon team for Boss Raids & PvP Battles',
   '📖 /guide — Full step-by-step guide for new trainers',
   '🤝 /invite — Get your personal invite link and earn rewards',
   '📣 /promo — Show a fun, shareable hype message about this group',
   '',
   bold('🤝 Friends'),
   '',
-  '🤝 /friend — Reply to someone\'s message to send them a friend request',
+  '🤝 /friend — Reply to someone\'s message to send a friend request',
   '📇 /friends — View your friends list',
-  '🎁 /gift — Reply to a friend\'s message to send them today\'s free gift (once a day)',
-  '💔 /unfriend — Reply to a friend\'s message to remove them',
+  '🎁 /gift — Send today\'s free gift to a friend',
+  '💔 /unfriend — Remove a friend',
   '',
   bold('🎮 Mini-Games'),
   '',
-  '📖 /games — See the full mini-games menu with rules for each one',
-  '❌⭕ /tictactoe (or /ttt) — Challenge someone to Tic-Tac-Toe',
-  '🔥💧🌿 /rps — Challenge someone to Rock-Paper-Scissors',
-  '🔴🟡 /connect4 (or /c4) — Challenge someone to Connect 4',
-  '🔤 /scramble — Unscramble a Pokémon name, first correct reply wins',
-  '❓ /whosthat — Guess the Pokémon from its silhouette, first correct reply wins (/whosthatstart for auto mode, /stopwhoisthat to end it)',
-  '🪢 /hangman — Guess the Pokémon letter by letter, first to complete it wins',
-  '⚔️ /battle — 3v3 team battles with real Pokémon from your /collection, type-based moves, auto-swap on faint',
-  '',
-  '🐾 Wild Pokémon spawn automatically — tap Catch! to grab them.',
+  '📖 /games — Mini-games menu with rules for each one',
+  '❌⭕ /tictactoe — Challenge someone to Tic-Tac-Toe',
+  '🔥💧🌿 /rps — Rock-Paper-Scissors',
+  '🔴🟡 /connect4 — Challenge someone to Connect 4',
+  '🔤 /scramble — Unscramble a Pokémon name',
+  '❓ /whosthat — Guess the Pokémon from its silhouette',
+  '🪢 /hangman — Guess the Pokémon letter by letter',
+  '⚔️ /battle — 3v3 team battles with real Pokémon from your /collection',
+  '</blockquote>',
 ].join('\n');
 
 const GUIDE_TEXT = [
   brandTag(),
+  '',
+  '<blockquote>',
   bold('📖 Trainer Guide — How This Group Works'),
   '',
   bold('1. Check in every day'),
   'Send /checkin once a day to build your streak 🔥. Longer streaks unlock bonus rewards at day 7, 15, 30, and 100.',
   '',
   bold('2. Watch for wild Pokémon'),
-  'Every 30–60 minutes a wild Pokémon appears in the group with a 🎯 Catch! button. First tap wins it — rarer ones (shiny/legendary) give more XP and Coins.',
-  '⏳ Every spawn has a countdown before it flees — the rarer it is, the less time you get (Mythicals vanish in just 3 minutes!). Keep your notifications on, trainer. 👀',
+  'Every 30–60 minutes a wild Pokémon appears in the group with a 🎯 Catch! button. First tap wins it — rarer ones give more XP and Coins.',
   '',
   bold('3. Complete the daily mission'),
-  "Send /mission to see today's target Pokémon. Catch it once to earn a bonus + a Mystery Box.",
+  "Send /mission to see today's target Pokémon.",
   '',
   bold('4. Spin & open your free daily rewards'),
-  '/spin and /chest are both free once a day — Coins, XP, and items like Shiny Tickets.',
+  '/spin and /chest are both free once a day.',
   '',
   bold('5. Use your items'),
-  'Check /inventory to see what you\'ve collected, then /use &lt;item&gt; to redeem it — e.g. /use shiny_ticket summons a Shiny Pokémon instantly.',
+  'Check /inventory to see what you\'ve collected, then /use &lt;item&gt; to redeem it.',
   '',
-  bold('6. Play the quiz'),
-  '/quiz starts a Pokémon trivia question — first correct reply in the chat wins XP.',
-  '',
-  bold('7. Play mini-games'),
-  'Bored between spawns? Send /games to see the full menu with rules for each one — Tic-Tac-Toe, Rock-Paper-Scissors, Connect 4, and Pokémon Battle (reply to someone\'s message to target them, add "bet" to play for coins, or tap 🤖 Play vs Bot for instant solo play), plus Scramble, Who\'s That Pokémon?, and Hangman (solo-friendly word/guessing games — first correct reply or completed guess in chat wins). Battle is the one that uses your actual /collection — pick a real 3-Pokémon team and fight with type-based moves, swapping in your next Pokémon whenever one faints.',
-  '',
-  bold('8. Spend your coins'),
-  '/shop lets you buy titles and badges shown on your /profile — pure bragging rights. Got a promo code from an event or announcement? /redeem CODE for bonus XP and coins.',
-  '',
-  bold('9. Track your progress'),
-  '/profile shows your level, rank, coins, streak, and stats. /leaderboard shows the top trainers in this group.',
-  '',
-  '🎮 That\'s the full loop — check in daily, catch what you can, and climb the leaderboard!',
+  bold('6. Play mini-games & battles'),
+  'Send /games for mini-games or /battle for 3v3 Pokémon team combat!',
+  '</blockquote>',
 ].join('\n');
 
 const settings = require('./db/settings');
@@ -183,56 +175,34 @@ const settings = require('./db/settings');
 const START_TEXT = [
   brandTag(),
   '',
+  '<blockquote>',
   bold('🎮 Welcome to PokéDex Bot!'),
   '',
-  'Catch Pokémon, complete missions, collect rare finds, battle trainers & climb the leaderboard! 🐾🏆',
+  bold('Catch Pokémon, complete missions, collect rare finds, battle trainers & climb the leaderboard! 🐾🏆'),
   '',
   '✨ ' + bold('Ready to begin your journey?'),
   '',
   '👉 Tap /start to create your Trainer Profile and begin catching!',
+  '</blockquote>',
 ].join('\n');
 
 function guideKeyboard() {
   return Markup.inlineKeyboard([Markup.button.callback('📖 Full Guide', 'show_guide')]);
 }
 
-function allCommandsKeyboard(botUsername) {
-  const rows = [];
+function startKeyboard(botUsername) {
+  const buttons = [];
   if (botUsername) {
-    rows.push([Markup.button.url('➕ Add to Group', `https://t.me/${botUsername}?startgroup=true`)]);
+    buttons.push([Markup.button.url('➕ Add to Group', `https://t.me/${botUsername}?startgroup=true`)]);
   }
-  rows.push([
-    Markup.button.callback('👤 Profile', 'cmd:profile'),
-    Markup.button.callback('🏆 Leaderboard', 'cmd:leaderboard'),
-    Markup.button.callback('🔥 Check-in', 'cmd:checkin'),
-  ]);
-  rows.push([
-    Markup.button.callback('🎡 Spin', 'cmd:spin'),
-    Markup.button.callback('📦 Chest', 'cmd:chest'),
-    Markup.button.callback('❓ Quiz', 'cmd:quiz'),
-  ]);
-  rows.push([
-    Markup.button.callback('⚔️ Battle', 'cmd:battle'),
-    Markup.button.callback('🎮 Games', 'cmd:games'),
-    Markup.button.callback('🎒 Inventory', 'cmd:inventory'),
-  ]);
-  rows.push([
-    Markup.button.callback('📂 Collection', 'cmd:collection'),
-    Markup.button.callback('🛍️ Shop', 'cmd:shop'),
-    Markup.button.callback('🥚 Breed', 'cmd:breed'),
-  ]);
-  rows.push([
-    Markup.button.callback('📇 Friends', 'cmd:friends'),
-    Markup.button.callback('🤝 Invite', 'cmd:invite'),
-    Markup.button.callback('📖 Full Guide', 'show_guide'),
-  ]);
-  return Markup.inlineKeyboard(rows);
+  buttons.push([Markup.button.callback('📖 Full Guide', 'show_guide')]);
+  return Markup.inlineKeyboard(buttons);
 }
 
 async function sendStartMessage(ctx) {
   referralFeature.handleReferralStart(ctx);
   const botUsername = ctx.botInfo?.username;
-  const keyboard = allCommandsKeyboard(botUsername);
+  const keyboard = startKeyboard(botUsername);
 
   const startVideo = settings.getSetting('start_video_url', null);
   const startPic = settings.getSetting('start_pic_url', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png');
