@@ -21,7 +21,7 @@ function register(bot) {
 
     const result = streaks.checkIn(chatId, userId);
     if (result.alreadyCheckedInToday) {
-      ctx.reply(`You already checked in today! Current streak: ${bold(`Day ${result.streak}`)} 🔥`, HTML);
+      ctx.reply(`<blockquote>You already checked in today! Current streak: ${bold(`Day ${result.streak}`)} 🔥</blockquote>`, HTML);
       return;
     }
 
@@ -43,7 +43,7 @@ function register(bot) {
       );
     }
 
-    const sent = await ctx.reply(lines.join('\n'), HTML);
+    const sent = await ctx.reply(`<blockquote>\n${lines.join('\n')}\n</blockquote>`, HTML);
     if (isMilestone) {
       await react(ctx.telegram, chatId, sent.message_id, '🔥');
     }

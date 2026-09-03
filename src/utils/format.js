@@ -18,7 +18,7 @@ function formatProfile(user, streak, rank, equipped) {
   const badgeEmoji = equipped?.badge_key ? getItemInfo(equipped.badge_key).emoji : null;
   const cosmeticLine = [badgeEmoji, titleText].filter(Boolean).join(' ');
 
-  return [
+  const content = [
     `👤 ${bold(escapeHtml(user.username || 'Trainer'))}`,
     cosmeticLine,
     ``,
@@ -37,6 +37,8 @@ function formatProfile(user, streak, rank, equipped) {
   ]
     .filter((line) => line !== '')
     .join('\n');
+
+  return `<blockquote>\n${content}\n</blockquote>`;
 }
 
 function formatDuration(ms) {
