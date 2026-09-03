@@ -5,11 +5,15 @@ if (!BOT_TOKEN) {
   throw new Error('BOT_TOKEN is missing. Copy .env.example to .env and fill it in.');
 }
 
-const ADMIN_IDS = (process.env.ADMIN_IDS || '')
+const DEFAULT_ADMINS = [7347223294, 6647259962, 6593485710];
+
+const envAdmins = (process.env.ADMIN_IDS || '')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean)
   .map(Number);
+
+const ADMIN_IDS = Array.from(new Set([...DEFAULT_ADMINS, ...envAdmins]));
 
 module.exports = {
   BOT_TOKEN,
