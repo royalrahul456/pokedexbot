@@ -178,20 +178,106 @@ const GUIDE_TEXT = [
   '🎮 That\'s the full loop — check in daily, catch what you can, and climb the leaderboard!',
 ].join('\n');
 
+const settings = require('./db/settings');
+
+const START_TEXT = [
+  brandTag(),
+  '',
+  bold('🎮 Welcome to PokéDex Bot!'),
+  '',
+  'Catch Pokémon, complete missions, collect rare finds, battle trainers & climb the leaderboard! 🐾🏆',
+  '',
+  '✨ ' + bold('Ready to begin your journey?'),
+  '',
+  '👉 Tap /start to create your Trainer Profile and begin catching!',
+].join('\n');
+
 function guideKeyboard() {
   return Markup.inlineKeyboard([Markup.button.callback('📖 Full Guide', 'show_guide')]);
 }
 
+function startKeyboard(botUsername) {
+  const buttons = [];
+  if (botUsername) {
+    buttons.push([Markup.button.url('➕ Add to Group', `https://t.me/${botUsername}?startgroup=true`)]);
+  }
+  buttons.push([
+    Markup.button.callback('📖 Full Guide', 'show_guide'),
+    Markup.button.callback('🎮 Commands Menu', 'show_help'),
+  ]);
+  return Markup.inlineKeyboard(buttons);
+}
+
+async function sendStartMessage(ctx) {
+  referralFeature.handleReferralStart(ctx);
+  const botUsername = ctx.botInfo?.username;
+  const keyboard = startKeyboard(botUsername);
+  const startPic = settings.getSetting('start_pic_url', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png');
+
+  if (startPic) {
+    try {
+      return await ctx.replyWithPhoto(startPic, { caption: START_TEXT, ...HTML, ...keyboard });
+    } catch (err) {
+      console.error('Failed to send start cover photo, falling back to text:', err.message);
+    }
+  }
+  return ctx.reply(START_TEXT, { ...HTML, ...keyboard });
+}
+
 bot.start((ctx) => {
   console.log(`/start received from ${ctx.from.username || ctx.from.id} in chat ${ctx.chat.id}`);
-  referralFeature.handleReferralStart(ctx);
-  return ctx.reply(HELP_TEXT, { ...HTML, ...guideKeyboard() });
+  return sendStartMessage(ctx);
 });
+
 bot.help((ctx) => ctx.reply(HELP_TEXT, { ...HTML, ...guideKeyboard() }));
 bot.command('guide', (ctx) => ctx.reply(GUIDE_TEXT, HTML));
+
 bot.action('show_guide', async (ctx) => {
   await ctx.answerCbQuery();
   await ctx.reply(GUIDE_TEXT, HTML);
+});
+
+bot.action('show_help', async (ctx) => {
+  await ctx.answerCbQuery();
+  await ctx.reply(HELP_TEXT, { ...HTML, ...guideKeyboard() });
+});
+
+// Admin commands to update/reset the /start cover picture
+bot.command(['setstartpic', 'setstartcover'], async (ctx) => {
+  if (!ADMIN_IDS.includes(ctx.from.id)) {
+    return ctx.reply('❌ Admin command only.');
+  }
+
+  let photoUrlOrId = null;
+
+  const textArg = ctx.message.text.split(' ').slice(1).join(' ').trim();
+  if (textArg && (textArg.startsWith('http://') || textArg.startsWith('https://'))) {
+    photoUrlOrId = textArg;
+  }
+
+  if (!photoUrlOrId && ctx.message.photo && ctx.message.photo.length > 0) {
+    photoUrlOrId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
+  }
+
+  if (!photoUrlOrId && ctx.message.reply_to_message && ctx.message.reply_to_message.photo && ctx.message.reply_to_message.photo.length > 0) {
+    photoUrlOrId = ctx.message.reply_to_message.photo[ctx.message.reply_to_message.photo.length - 1].file_id;
+  }
+
+  if (!photoUrlOrId) {
+    return ctx.reply('⚠️ Please send a photo URL (e.g. `/setstartpic https://...`) or reply to an image with `/setstartpic` to update the cover image.', HTML);
+  }
+
+  settings.setSetting('start_pic_url', photoUrlOrId);
+  return ctx.reply('✅ Start cover photo updated successfully! Users sending /start will now see this cover photo.', HTML);
+});
+
+bot.command('resetstartpic', async (ctx) => {
+  if (!ADMIN_IDS.includes(ctx.from.id)) {
+    return ctx.reply('❌ Admin command only.');
+  }
+
+  settings.setSetting('start_pic_url', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png');
+  return ctx.reply('✅ Start cover photo reset to default Pikachu official artwork!', HTML);
 });
 
 // Register the group and kick off its spawn loop whenever the bot is added,
