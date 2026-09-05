@@ -206,8 +206,8 @@ async function sendStartMessage(ctx) {
   const botUsername = ctx.botInfo?.username;
   const keyboard = startKeyboard(botUsername);
 
-  const startVideo = settings.getSetting('start_video_url', null);
-  const startPic = settings.getSetting('start_pic_url', DEFAULT_START_PIC);
+  const startVideo = settings.getSetting('start_video_url', START_VIDEO_URL || null);
+  const startPic = settings.getSetting('start_pic_url', START_PIC_URL || DEFAULT_START_PIC);
 
   if (startVideo) {
     try {

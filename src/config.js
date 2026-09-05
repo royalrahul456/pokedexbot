@@ -20,5 +20,7 @@ module.exports = {
   ADMIN_IDS,
   DATABASE_URL: process.env.DATABASE_URL || null,
   BACKEND_URL: process.env.BACKEND_URL || null,
+  START_VIDEO_URL: process.env.START_VIDEO_URL || null,
+  START_PIC_URL: process.env.START_PIC_URL || null,
   DB_PATH: require('path').join(__dirname, '..', 'data', 'trainer.sqlite'),
 };
