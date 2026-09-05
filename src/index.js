@@ -199,13 +199,15 @@ function startKeyboard(botUsername) {
   return Markup.inlineKeyboard(buttons);
 }
 
+const DEFAULT_START_PIC = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png';
+
 async function sendStartMessage(ctx) {
   referralFeature.handleReferralStart(ctx);
   const botUsername = ctx.botInfo?.username;
   const keyboard = startKeyboard(botUsername);
 
   const startVideo = settings.getSetting('start_video_url', null);
-  const startPic = settings.getSetting('start_pic_url', 'https://img.pokemondb.net/artwork/large/pikachu.jpg');
+  const startPic = settings.getSetting('start_pic_url', DEFAULT_START_PIC);
 
   if (startVideo) {
     try {
@@ -224,10 +226,12 @@ async function sendStartMessage(ctx) {
       return await ctx.replyWithPhoto(startPic, { caption: START_TEXT, ...HTML, ...keyboard });
     } catch (err) {
       console.error('Failed to send start cover photo:', err.message);
-      try {
-        return await ctx.replyWithPhoto('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png', { caption: START_TEXT, ...HTML, ...keyboard });
-      } catch (err2) {
-        console.error('Failed to send fallback cover photo:', err2.message);
+      if (startPic !== DEFAULT_START_PIC) {
+        try {
+          return await ctx.replyWithPhoto(DEFAULT_START_PIC, { caption: START_TEXT, ...HTML, ...keyboard });
+        } catch (err2) {
+          console.error('Failed to send default start cover photo:', err2.message);
+        }
       }
     }
   }
