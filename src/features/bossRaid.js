@@ -730,12 +730,13 @@ async function endRaidVictory(bot, raid) {
 async function startCatchEncounter(bot, raid) {
   catchAttempts.set(raid.chatId, new Set());
   const entry = getPokedexEntry(raid.bossName);
+  const dexStr = raid.bossDex ? `#${String(raid.bossDex).padStart(3, '0')} ` : '';
   const caption = [
-    bold(`🎯 ${escapeHtml(raid.bossName)} Encounter!`),
+    '<blockquote>',
+    bold(`🎯 ${dexStr}${escapeHtml(raid.bossName)} Catch Encounter!`),
     '',
-    'Every trainer who fought gets one independent catch attempt — tap below!',
-    '',
-    'Results:',
+    'Every trainer who fought gets 1 catch attempt — tap below!',
+    '</blockquote>',
   ].join('\n');
 
   const keyboard = Markup.inlineKeyboard([[Markup.button.callback('🎯 Catch!', `raidcatch:${raid.chatId}`)]]);
@@ -777,11 +778,12 @@ async function attemptCatch(bot, ctx, chatId, userId) {
   const name = displayName(ctx.from);
   const chance = CATCH_CHANCE[encounter.tier] || CATCH_CHANCE.legendary;
   const caught = Math.random() < chance;
+  const dexStr = encounter.bossDex ? `#${String(encounter.bossDex).padStart(3, '0')} ` : '';
   let resultLine;
   if (caught) {
     const shiny = Math.random() < RAID_SHINY_CHANCE;
     pokemonCollectionDb.recordCatch(userId, encounter.bossName, encounter.tier, shiny);
-    resultLine = `✅ ${bold(name)} caught ${shiny ? '✨ SHINY ' : ''}${bold(encounter.bossName)}!`;
+    resultLine = `✅ ${bold(name)} caught ${shiny ? '✨ SHINY ' : ''}${bold(`${dexStr}${encounter.bossName}`)}!`;
     await ctx.answerCbQuery(shiny ? `✨ SHINY catch!! ${encounter.bossName} is yours!` : `Caught! ${encounter.bossName} is yours!`);
   } else {
     resultLine = `💨 ${bold(name)}'s attempt broke free.`;
@@ -789,14 +791,15 @@ async function attemptCatch(bot, ctx, chatId, userId) {
   }
   encounter.results.push(resultLine);
 
-  const caption = [
-    bold(`🎯 ${escapeHtml(encounter.bossName)} Encounter!`),
+  const captionLines = [
+    bold(`🎯 ${dexStr}${escapeHtml(encounter.bossName)} Catch Encounter!`),
     '',
-    'Every trainer who fought gets one independent catch attempt — tap below!',
+    'Every trainer who fought gets 1 catch attempt — tap below!',
     '',
     'Results:',
     ...encounter.results,
-  ].join('\n');
+  ];
+  const caption = `<blockquote>\n${captionLines.join('\n')}\n</blockquote>`;
 
   const stillOpen = attempted.size < encounter.participantIds.size;
   const keyboard = stillOpen
