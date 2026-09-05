@@ -115,13 +115,17 @@ async function postTeaser(telegram, chatId) {
   }
 }
 
-function headlineWithGender(rarity, name, gender) {
-  const namePart = gender ? `${escapeHtml(name)} ${gender}` : escapeHtml(name);
+const { formatDexId } = require('../data/pokemon');
+
+function headlineWithGender(rarity, name, gender, dexStr) {
+  const dexPrefix = dexStr ? `${dexStr} ` : '';
+  const namePart = gender ? `${dexPrefix}${escapeHtml(name)} ${gender}` : `${dexPrefix}${escapeHtml(name)}`;
   return bold(RARITY_HEADLINE[rarity](namePart));
 }
 
 function buildSpawnMessage(spawn, precedingText, expiryMs) {
-  const headline = headlineWithGender(spawn.rarity, spawn.name, spawn.gender);
+  const dexStr = spawn.dexStr || formatDexId(spawn.dexNumber);
+  const headline = headlineWithGender(spawn.rarity, spawn.name, spawn.gender, dexStr);
   const urgency = RARITY_URGENCY[spawn.rarity] ?? RARITY_URGENCY.common;
   const lines = [];
   if (precedingText) lines.push(precedingText, '');
@@ -136,7 +140,7 @@ function buildSpawnMessage(spawn, precedingText, expiryMs) {
     `⏳ Disappears in ${bold(formatDuration(expiryMs))}!`,
     urgency
   );
-  return lines.join('\n');
+  return `<blockquote>\n${lines.join('\n')}\n</blockquote>`;
 }
 
 // `telegram` is a Telegraf Telegram client — either `bot.telegram` or `ctx.telegram`.
@@ -154,8 +158,9 @@ async function postSpawn(telegram, chatId, spawn, precedingText) {
   setTimeout(async () => {
     const didExpire = spawns.tryExpireSpawn(chatId, message.message_id);
     if (!didExpire) return; // already caught, or a newer spawn replaced it
-    const headline = headlineWithGender(spawn.rarity, spawn.name, spawn.gender);
-    const goneText = `${headline}\n\n💨 ${pickGoneFlavor()}`;
+    const dexStr = spawn.dexStr || formatDexId(spawn.dexNumber);
+    const headline = headlineWithGender(spawn.rarity, spawn.name, spawn.gender, dexStr);
+    const goneText = `<blockquote>\n${headline}\n\n💨 ${pickGoneFlavor()}\n</blockquote>`;
     try {
       if (spawn.imageUrl) {
         await telegram.editMessageCaption(chatId, message.message_id, undefined, goneText, HTML);

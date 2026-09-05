@@ -259,20 +259,6 @@ async function sendWithBackoffRetry(fn, label) {
 // inconsistently — caused real "no text/caption to edit" 400s in production.)
 async function sendRaidMedia(bot, chatId, bossName, dexNumber, caption, keyboard) {
   try {
-    const message = await sendWithBackoffRetry(
-      () =>
-        bot.telegram.sendAnimation(chatId, getAnimatedSpriteUrl(bossName), {
-          caption,
-          parse_mode: 'HTML',
-          reply_markup: keyboard.reply_markup,
-        }),
-      `Animated raid intro for ${bossName}`
-    );
-    return { message, isMedia: true };
-  } catch (err) {
-    console.error(`Failed to send animated raid intro for ${bossName}, falling back to static artwork:`, err.message);
-  }
-  try {
     const imageUrl = getArtworkUrl(dexNumber, false);
     if (imageUrl) {
       const message = await sendWithBackoffRetry(
@@ -284,11 +270,7 @@ async function sendRaidMedia(bot, chatId, bossName, dexNumber, caption, keyboard
   } catch (err) {
     console.error(`Failed to send static raid artwork for ${bossName}, falling back to plain text:`, err.message);
   }
-  // Last resort. This used to be unguarded on the theory that a plain sendMessage "always
-  // succeeds unless the bot lost access to the chat" — wrong in practice: a live 429 (e.g.
-  // Telegram throttling the bot from cumulative traffic) hits this exact call too, and an
-  // uncaught throw here meant a just-won raid's catch encounter silently never got created
-  // even though rewards were already granted. Never throws now — callers check `message`.
+
   try {
     const message = await sendWithBackoffRetry(
       () => bot.telegram.sendMessage(chatId, caption, { parse_mode: 'HTML', reply_markup: keyboard.reply_markup }),
