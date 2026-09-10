@@ -17,8 +17,6 @@ function buildReferralLink(botUsername, chatId, userId) {
   return `https://t.me/${botUsername}?start=ref_${chatId}_${userId}`;
 }
 
-// Called from bot.start — parses a payload like "ref_<chatId>_<referrerId>" and records
-// a pending referral if valid. Silently ignores anything malformed or self-referrals.
 function handleReferralStart(ctx) {
   const payload = ctx.startPayload;
   if (!payload || !payload.startsWith('ref_')) return;
@@ -37,8 +35,6 @@ function handleReferralStart(ctx) {
   }
 }
 
-// Called from the passive chat-XP handler for every group message — checks if this
-// user has a pending referral for THIS group, and if so, pays out the referrer.
 async function checkReferralReward(ctx) {
   const chatId = ctx.chat.id;
   const referral = referrals.getPendingReferral(ctx.from.id);
@@ -60,27 +56,37 @@ async function checkReferralReward(ctx) {
   }
 }
 
-function register(bot) {
-  bot.command('invite', async (ctx) => {
-    if (ctx.chat.type !== 'group' && ctx.chat.type !== 'supergroup') {
-      await ctx.reply('Use /invite inside a group to get your personal invite link for that group.');
-      return;
-    }
-    const username = await getBotUsername(ctx.telegram);
-    const link = buildReferralLink(username, ctx.chat.id, ctx.from.id);
-    await ctx.reply(
-      [
-        bold('🤝 Invite Friends!'),
-        '',
-        `Share your personal link — when a friend joins and says hello in this group, you earn +${bold(
-          XP.INVITE_FRIEND
-        )} XP and +${bold(REFERRAL_COINS)} Coins:`,
-        '',
-        link,
-      ].join('\n'),
-      HTML
-    );
-  });
+async function showInviteLink(ctx) {
+  if (ctx.chat.type !== 'group' && ctx.chat.type !== 'supergroup') {
+    return ctx.reply('<blockquote>Use /invite inside a group to get your personal invite link for that group.</blockquote>', HTML);
+  }
+  const username = await getBotUsername(ctx.telegram);
+  const link = buildReferralLink(username, ctx.chat.id, ctx.from.id);
+  return ctx.reply(
+    [
+      '<blockquote>',
+      bold('🤝 Invite Friends!'),
+      '',
+      `Share your personal link — when a friend joins and says hello in this group, you earn +${bold(
+        XP.INVITE_FRIEND
+      )} XP and +${bold(REFERRAL_COINS)} Coins:`,
+      '',
+      link,
+      '</blockquote>',
+    ].join('\n'),
+    HTML
+  );
 }
 
-module.exports = { register, handleReferralStart, checkReferralReward, getBotUsername, buildReferralLink };
+function register(bot) {
+  bot.command('invite', showInviteLink);
+}
+
+module.exports = {
+  register,
+  handleReferralStart,
+  checkReferralReward,
+  getBotUsername,
+  buildReferralLink,
+  showInviteLink,
+};

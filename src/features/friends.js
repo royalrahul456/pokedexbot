@@ -37,6 +37,18 @@ function unfriendConfirmKeyboard(userA, userB) {
   ]);
 }
 
+async function showFriends(ctx) {
+  const list = friendships.listFriends(ctx.from.id);
+  if (list.length === 0) {
+    return ctx.reply('<blockquote>You have no friends yet — reply to someone\'s message with /friend to send a request.</blockquote>', HTML);
+  }
+  const lines = [bold(`🤝 Your Friends (${list.length})`), ''];
+  for (const friend of list) {
+    lines.push(`• ${escapeHtml(friend.username || `Trainer ${friend.userId}`)}`);
+  }
+  return ctx.reply(`<blockquote>\n${lines.join('\n')}\n</blockquote>`, HTML);
+}
+
 function register(bot) {
   bot.command('friend', async (ctx) => {
     const chatId = ctx.chat.id;
@@ -108,18 +120,7 @@ function register(bot) {
     await ctx.editMessageText(`🤝 ${bold('Friends!')} Say hello and try /gift once a day.`, HTML);
   });
 
-  bot.command('friends', async (ctx) => {
-    const list = friendships.listFriends(ctx.from.id);
-    if (list.length === 0) {
-      await ctx.reply('You have no friends yet — reply to someone\'s message with /friend to send a request.');
-      return;
-    }
-    const lines = [bold(`🤝 Your Friends (${list.length})`), ''];
-    for (const friend of list) {
-      lines.push(`• ${escapeHtml(friend.username || `Trainer ${friend.userId}`)}`);
-    }
-    await ctx.reply(lines.join('\n'), HTML);
-  });
+  bot.command('friends', showFriends);
 
   bot.command('unfriend', async (ctx) => {
     const target = targetFromReply(ctx);
@@ -193,4 +194,4 @@ function register(bot) {
   });
 }
 
-module.exports = { register };
+module.exports = { register, showFriends };

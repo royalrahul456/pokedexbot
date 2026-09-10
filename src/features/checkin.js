@@ -13,41 +13,43 @@ const MILESTONE_REWARDS = {
 
 const BASE_CHECKIN_REWARD = { xp: 15, coins: 25 };
 
-function register(bot) {
-  bot.command(['checkin', 'daily'], async (ctx) => {
-    const chatId = ctx.chat.id;
-    const userId = ctx.from.id;
-    users.getOrCreateUser(chatId, userId, ctx.from.username || ctx.from.first_name);
+async function handleCheckin(ctx) {
+  const chatId = ctx.chat.id;
+  const userId = ctx.from.id;
+  users.getOrCreateUser(chatId, userId, ctx.from.username || ctx.from.first_name);
 
-    const result = streaks.checkIn(chatId, userId);
-    if (result.alreadyCheckedInToday) {
-      ctx.reply(`<blockquote>You already checked in today! Current streak: ${bold(`Day ${result.streak}`)} 🔥</blockquote>`, HTML);
-      return;
-    }
+  const result = streaks.checkIn(chatId, userId);
+  if (result.alreadyCheckedInToday) {
+    return ctx.reply(`<blockquote>You already checked in today! Current streak: ${bold(`Day ${result.streak}`)} 🔥</blockquote>`, HTML);
+  }
 
-    grantRewards(chatId, userId, BASE_CHECKIN_REWARD);
+  grantRewards(chatId, userId, BASE_CHECKIN_REWARD);
 
-    const lines = [
-      `✅ Checked in! ${bold(`Day ${result.streak}`)} 🔥`,
-      `+${bold(BASE_CHECKIN_REWARD.xp)} XP, +${bold(BASE_CHECKIN_REWARD.coins)} Coins`,
-    ];
+  const lines = [
+    `✅ Checked in! ${bold(`Day ${result.streak}`)} 🔥`,
+    `+${bold(BASE_CHECKIN_REWARD.xp)} XP, +${bold(BASE_CHECKIN_REWARD.coins)} Coins`,
+  ];
 
-    const isMilestone = result.milestone && MILESTONE_REWARDS[result.milestone];
-    if (isMilestone) {
-      const reward = MILESTONE_REWARDS[result.milestone];
-      grantRewards(chatId, userId, reward);
-      lines.push(
-        '',
-        `🏅 ${bold(`Milestone reached: Day ${result.milestone}!`)}`,
-        `Bonus: +${bold(reward.xp)} XP, +${bold(reward.coins)} Coins`
-      );
-    }
+  const isMilestone = result.milestone && MILESTONE_REWARDS[result.milestone];
+  if (isMilestone) {
+    const reward = MILESTONE_REWARDS[result.milestone];
+    grantRewards(chatId, userId, reward);
+    lines.push(
+      '',
+      `🏅 ${bold(`Milestone reached: Day ${result.milestone}!`)}`,
+      `Bonus: +${bold(reward.xp)} XP, +${bold(reward.coins)} Coins`
+    );
+  }
 
-    const sent = await ctx.reply(`<blockquote>\n${lines.join('\n')}\n</blockquote>`, HTML);
-    if (isMilestone) {
-      await react(ctx.telegram, chatId, sent.message_id, '🔥');
-    }
-  });
+  const sent = await ctx.reply(`<blockquote>\n${lines.join('\n')}\n</blockquote>`, HTML);
+  if (isMilestone) {
+    await react(ctx.telegram, chatId, sent.message_id, '🔥');
+  }
+  return sent;
 }
 
-module.exports = { register };
+function register(bot) {
+  bot.command(['checkin', 'daily'], handleCheckin);
+}
+
+module.exports = { register, handleCheckin };

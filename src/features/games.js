@@ -16,16 +16,21 @@ function rulesKeyboard() {
 function menuText() {
   return [
     brandTag(),
+    '',
+    '<blockquote>',
     bold('🎮 Mini-Games'),
     '',
     "Free-time games you can play between spawns — tap one below to see how it works.",
+    '</blockquote>',
   ].join('\n');
 }
 
+function showGamesMenu(ctx) {
+  return ctx.reply(menuText(), { ...HTML, ...menuKeyboard() });
+}
+
 function register(bot) {
-  bot.command('games', async (ctx) => {
-    await ctx.reply(menuText(), { ...HTML, ...menuKeyboard() });
-  });
+  bot.command('games', showGamesMenu);
 
   bot.action('games:menu', async (ctx) => {
     await ctx.answerCbQuery();
@@ -44,4 +49,4 @@ function register(bot) {
   });
 }
 
-module.exports = { register };
+module.exports = { register, showGamesMenu };

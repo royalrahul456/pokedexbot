@@ -233,12 +233,14 @@ async function sendPhotoPage(ctx, caption, imageUrl, keyboard) {
   }
 }
 
+async function showCollection(ctx) {
+  const ownerId = ctx.from.id;
+  users.getOrCreateUser(ctx.chat.id, ownerId, ctx.from.username || ctx.from.first_name);
+  return ctx.reply(mainMenuText(), { ...HTML, ...mainMenuKeyboard(ownerId) });
+}
+
 function register(bot) {
-  bot.command(['collection', 'mycollection'], async (ctx) => {
-    const ownerId = ctx.from.id;
-    users.getOrCreateUser(ctx.chat.id, ownerId, ctx.from.username || ctx.from.first_name);
-    await ctx.reply(mainMenuText(), { ...HTML, ...mainMenuKeyboard(ownerId) });
-  });
+  bot.command(['collection', 'mycollection'], showCollection);
 
   bot.action(/^coll:(\d+):(\d+):menu$/, async (ctx) => {
     const ownerId = Number(ctx.match[1]);
@@ -456,4 +458,4 @@ async function sendCategoryTextRaw(ctx, text, keyboard) {
   }
 }
 
-module.exports = { register };
+module.exports = { register, showCollection };

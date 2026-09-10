@@ -81,12 +81,14 @@ function catalogKeyboard(type, ownerId) {
   return Markup.inlineKeyboard(rows);
 }
 
+async function showShop(ctx) {
+  const userId = ctx.from.id;
+  users.getOrCreateUser(ctx.chat.id, userId, ctx.from.username || ctx.from.first_name);
+  return ctx.reply(mainMenuText(), { ...HTML, ...mainMenuKeyboard(userId) });
+}
+
 function register(bot) {
-  bot.command('shop', async (ctx) => {
-    const userId = ctx.from.id;
-    users.getOrCreateUser(ctx.chat.id, userId, ctx.from.username || ctx.from.first_name);
-    await ctx.reply(mainMenuText(), { ...HTML, ...mainMenuKeyboard(userId) });
-  });
+  bot.command('shop', showShop);
 
   bot.action(/^shop:(\d+):(\d+):menu$/, async (ctx) => {
     const ownerId = Number(ctx.match[1]);
@@ -159,4 +161,4 @@ function register(bot) {
   });
 }
 
-module.exports = { register };
+module.exports = { register, showShop };

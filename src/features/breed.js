@@ -75,71 +75,67 @@ function grantEgg(userId, eggKey, label) {
   return `${getItemInfo(eggKey).emoji} ${bold(label)} got a ${bold(getItemInfo(eggKey).label)}! Incubate it with /egg.`;
 }
 
-function register(bot) {
-  bot.command('breed', async (ctx) => {
-    const chatId = ctx.chat.id;
-    const initiator = ctx.from;
-    users.getOrCreateUser(chatId, initiator.id, initiator.username || initiator.first_name);
+async function handleBreedCommand(ctx) {
+  const chatId = ctx.chat.id;
+  const initiator = ctx.from;
+  users.getOrCreateUser(chatId, initiator.id, initiator.username || initiator.first_name);
 
-    const status = cooldowns.checkCooldown(GLOBAL_COOLDOWN_CHAT, initiator.id, BREED_COOLDOWN_KEY, BREED_COOLDOWN_MS);
-    if (!status.ready) {
-      await ctx.reply(`🥚 You already bred recently. Try again in ${bold(formatDuration(status.msRemaining))}.`, HTML);
-      return;
+  const status = cooldowns.checkCooldown(GLOBAL_COOLDOWN_CHAT, initiator.id, BREED_COOLDOWN_KEY, BREED_COOLDOWN_MS);
+  if (!status.ready) {
+    return ctx.reply(`<blockquote>🥚 You already bred recently. Try again in ${bold(formatDuration(status.msRemaining))}.</blockquote>`, HTML);
+  }
+
+  const repliedUser = ctx.message?.reply_to_message?.from;
+  const targetId = repliedUser && !repliedUser.is_bot ? repliedUser.id : null;
+
+  if (targetId) {
+    if (targetId === initiator.id) {
+      return ctx.reply("<blockquote>You can't breed with yourself that way — just send /breed with no reply to use two of your own Pokémon.</blockquote>", HTML);
+    }
+    if (!friendshipsDb.areFriends(initiator.id, targetId)) {
+      return ctx.reply('<blockquote>🥚 You can only breed with a friend\'s Pokémon — send them a /friend request first.</blockquote>', HTML);
+    }
+    const myChoices = eligibleCollection(initiator.id);
+    if (myChoices.length === 0) {
+      return ctx.reply("<blockquote>🥚 You don't have any Pokémon to breed — catch some first!</blockquote>", HTML);
     }
 
-    const repliedUser = ctx.message.reply_to_message?.from;
-    const targetId = repliedUser && !repliedUser.is_bot ? repliedUser.id : null;
+    users.getOrCreateUser(chatId, targetId, repliedUser.username || repliedUser.first_name);
+    const requestId = nextRequestId++;
+    crossRequests.set(requestId, {
+      chatId,
+      initiatorId: initiator.id,
+      initiatorName: displayName(initiator),
+      targetId,
+      targetName: displayName(repliedUser),
+      myChoices,
+      myPick: null,
+      theirChoices: null,
+      theirPick: null,
+      requestMsgId: null,
+      timeoutHandle: null,
+    });
 
-    if (targetId) {
-      if (targetId === initiator.id) {
-        await ctx.reply("You can't breed with yourself that way — just send /breed with no reply to use two of your own Pokémon.");
-        return;
-      }
-      if (!friendshipsDb.areFriends(initiator.id, targetId)) {
-        await ctx.reply('🥚 You can only breed with a friend\'s Pokémon — send them a /friend request first.');
-        return;
-      }
-      const myChoices = eligibleCollection(initiator.id);
-      if (myChoices.length === 0) {
-        await ctx.reply("🥚 You don't have any Pokémon to breed — catch some first!");
-        return;
-      }
-
-      users.getOrCreateUser(chatId, targetId, repliedUser.username || repliedUser.first_name);
-      const requestId = nextRequestId++;
-      crossRequests.set(requestId, {
-        chatId,
-        initiatorId: initiator.id,
-        initiatorName: displayName(initiator),
-        targetId,
-        targetName: displayName(repliedUser),
-        myChoices,
-        myPick: null,
-        theirChoices: null,
-        theirPick: null,
-        requestMsgId: null,
-        timeoutHandle: null,
-      });
-
-      await ctx.reply(
-        [bold('🥚 Pick which of YOUR Pokémon to offer for breeding:')].join('\n'),
-        { ...HTML, ...pickerKeyboard(`breed:cross:${requestId}:mine`, myChoices, 0) }
-      );
-      return;
-    }
-
-    // Solo mode — breed two of your own Pokémon.
-    const choices = eligibleCollection(initiator.id);
-    if (choices.length < 2) {
-      await ctx.reply('🥚 You need at least 2 different Pokémon in your collection to breed.');
-      return;
-    }
-    soloSessions.set(initiator.id, { choices, parent1Idx: null });
-    await ctx.reply(
-      bold('🥚 Pick the first parent:'),
-      { ...HTML, ...pickerKeyboard('breed:solo', choices, 0) }
+    return ctx.reply(
+      [bold('🥚 Pick which of YOUR Pokémon to offer for breeding:')].join('\n'),
+      { ...HTML, ...pickerKeyboard(`breed:cross:${requestId}:mine`, myChoices, 0) }
     );
-  });
+  }
+
+  // Solo mode — breed two of your own Pokémon.
+  const choices = eligibleCollection(initiator.id);
+  if (choices.length < 2) {
+    return ctx.reply('<blockquote>🥚 You need at least 2 different Pokémon in your collection to breed.</blockquote>', HTML);
+  }
+  soloSessions.set(initiator.id, { choices, parent1Idx: null });
+  return ctx.reply(
+    bold('🥚 Pick the first parent:'),
+    { ...HTML, ...pickerKeyboard('breed:solo', choices, 0) }
+  );
+}
+
+function register(bot) {
+  bot.command('breed', handleBreedCommand);
 
   // ---- Solo breeding ----
   bot.action(/^breed:solo:page:(\d+)$/, async (ctx) => {
@@ -321,4 +317,4 @@ function register(bot) {
   });
 }
 
-module.exports = { register };
+module.exports = { register, handleBreedCommand };

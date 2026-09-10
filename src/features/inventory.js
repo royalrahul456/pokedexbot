@@ -7,27 +7,28 @@ const { escapeHtml, bold, HTML } = require('../utils/text');
 const spinChest = require('./spinChest');
 const spawnFeature = require('./spawn');
 
+function showInventory(ctx) {
+  const chatId = ctx.chat.id;
+  const userId = ctx.from.id;
+  users.getOrCreateUser(chatId, userId, ctx.from.username || ctx.from.first_name);
+
+  const items = inventoryDb.listInventory(userId);
+  if (items.length === 0) {
+    return ctx.reply('<blockquote>🎒 Your inventory is empty. Try /spin, /chest, or catching Pokémon to earn items!</blockquote>', HTML);
+  }
+
+  const lines = [bold('🎒 Your Inventory'), ''];
+  for (const { item_key, quantity } of items) {
+    const info = getItemInfo(item_key);
+    const usable = info.consumable ? ` — /use ${item_key}` : '';
+    lines.push(`${info.emoji} ${bold(info.label)} x${bold(quantity)}${usable}`);
+    lines.push(`   ${info.description}`);
+  }
+  return ctx.reply(`<blockquote>\n${lines.join('\n')}\n</blockquote>`, HTML);
+}
+
 function register(bot) {
-  bot.command('inventory', (ctx) => {
-    const chatId = ctx.chat.id;
-    const userId = ctx.from.id;
-    users.getOrCreateUser(chatId, userId, ctx.from.username || ctx.from.first_name);
-
-    const items = inventoryDb.listInventory(userId);
-    if (items.length === 0) {
-      ctx.reply('🎒 Your inventory is empty. Try /spin, /chest, or catching Pokémon to earn items!');
-      return;
-    }
-
-    const lines = [bold('🎒 Your Inventory'), ''];
-    for (const { item_key, quantity } of items) {
-      const info = getItemInfo(item_key);
-      const usable = info.consumable ? ` — /use ${item_key}` : '';
-      lines.push(`${info.emoji} ${bold(info.label)} x${bold(quantity)}${usable}`);
-      lines.push(`   ${info.description}`);
-    }
-    ctx.reply(lines.join('\n'), HTML);
-  });
+  bot.command('inventory', showInventory);
 
   bot.command('use', async (ctx) => {
     const chatId = ctx.chat.id;
@@ -97,4 +98,4 @@ function register(bot) {
   });
 }
 
-module.exports = { register };
+module.exports = { register, showInventory };

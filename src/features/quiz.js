@@ -51,36 +51,37 @@ function difficultyForLevel(level) {
   return 1;
 }
 
+function startQuiz(ctx) {
+  const chatId = ctx.chat.id;
+  if (activeQuizzes.has(chatId)) {
+    return ctx.reply('<blockquote>A quiz is already in progress in this group!</blockquote>', HTML);
+  }
+
+  const asker = users.getOrCreateUser(chatId, ctx.from.id, ctx.from.username || ctx.from.first_name);
+  const question = pickQuestion(difficultyForLevel(asker.level));
+
+  const timer = setTimeout(() => {
+    if (activeQuizzes.get(chatId)?.question === question) {
+      activeQuizzes.delete(chatId);
+      ctx.reply(`<blockquote>\n${pickRandom(TIMEOUT_LINES)}\n${bold(escapeHtml(question.answers[0]))}\n</blockquote>`, HTML);
+    }
+  }, QUIZ_TIMEOUT_MS);
+
+  activeQuizzes.set(chatId, { question, timer });
+  const captionLines = [bold(pickRandom(INTRO_LINES)), '', question.question, '', pickRandom(CTA_LINES)];
+  const caption = `<blockquote>\n${captionLines.join('\n')}\n</blockquote>`;
+
+  if (question.guessName) {
+    const imageUrl = getArtworkUrl(getPokedexEntry(question.guessName).dexNumber);
+    if (imageUrl) {
+      return ctx.replyWithPhoto(imageUrl, { caption, parse_mode: 'HTML' });
+    }
+  }
+  return ctx.reply(caption, HTML);
+}
+
 function register(bot) {
-  bot.command('quiz', (ctx) => {
-    const chatId = ctx.chat.id;
-    if (activeQuizzes.has(chatId)) {
-      ctx.reply('A quiz is already in progress in this group!');
-      return;
-    }
-
-    const asker = users.getOrCreateUser(chatId, ctx.from.id, ctx.from.username || ctx.from.first_name);
-    const question = pickQuestion(difficultyForLevel(asker.level));
-
-    const timer = setTimeout(() => {
-      if (activeQuizzes.get(chatId)?.question === question) {
-        activeQuizzes.delete(chatId);
-        ctx.reply(`${pickRandom(TIMEOUT_LINES)}\n${bold(escapeHtml(question.answers[0]))}`, HTML);
-      }
-    }, QUIZ_TIMEOUT_MS);
-
-    activeQuizzes.set(chatId, { question, timer });
-    const caption = [bold(pickRandom(INTRO_LINES)), '', question.question, '', pickRandom(CTA_LINES)].join('\n');
-
-    if (question.guessName) {
-      const imageUrl = getArtworkUrl(getPokedexEntry(question.guessName).dexNumber);
-      if (imageUrl) {
-        ctx.replyWithPhoto(imageUrl, { caption, parse_mode: 'HTML' });
-        return;
-      }
-    }
-    ctx.reply(caption, HTML);
-  });
+  bot.command('quiz', startQuiz);
 
   bot.on('text', (ctx, next) => {
     const chatId = ctx.chat.id;
@@ -99,12 +100,12 @@ function register(bot) {
 
       const reaction = pickRandom(CORRECT_REACTIONS)(bold(escapeHtml(username)));
       const lines = [`${reaction} +${bold(XP.QUIZ_WIN)} XP`];
-      if (levelUpMsg) lines.push(levelUpMsg);
-      ctx.reply(lines.join('\n'), HTML);
+      if (levelUpMsg) lines.push('', levelUpMsg);
+      ctx.reply(`<blockquote>\n${lines.join('\n')}\n</blockquote>`, HTML);
       return;
     }
     return next ? next() : undefined;
   });
 }
 
-module.exports = { register };
+module.exports = { register, startQuiz };

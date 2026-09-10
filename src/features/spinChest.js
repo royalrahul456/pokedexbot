@@ -104,77 +104,77 @@ async function playSuspense(ctx, icons, title) {
   return message;
 }
 
-function register(bot) {
-  bot.command('spin', async (ctx) => {
-    const chatId = ctx.chat.id;
-    const userId = ctx.from.id;
-    users.getOrCreateUser(chatId, userId, ctx.from.username || ctx.from.first_name);
+async function handleSpin(ctx) {
+  const chatId = ctx.chat.id;
+  const userId = ctx.from.id;
+  users.getOrCreateUser(chatId, userId, ctx.from.username || ctx.from.first_name);
 
-    const status = cooldowns.checkCooldown(chatId, userId, 'spin', DAY_MS);
-    if (!status.ready) {
-      ctx.reply(`🎡 You already spun today. Next spin in ${bold(formatDuration(status.msRemaining))}.`, HTML);
-      return;
-    }
+  const status = cooldowns.checkCooldown(chatId, userId, 'spin', DAY_MS);
+  if (!status.ready) {
+    return ctx.reply(`<blockquote>🎡 You already spun today. Next spin in ${bold(formatDuration(status.msRemaining))}.</blockquote>`, HTML);
+  }
 
-    const reward = weightedPick(SPIN_TABLE);
-    const message = await playSuspense(ctx, SPIN_ICONS, '🎡 Spinning the wheel...');
-    applyReward(chatId, userId, reward.key);
+  const reward = weightedPick(SPIN_TABLE);
+  const message = await playSuspense(ctx, SPIN_ICONS, '🎡 Spinning the wheel...');
+  applyReward(chatId, userId, reward.key);
 
-    if (reward.key === 'extra_spin') {
-      await ctx.telegram.editMessageText(
-        chatId,
-        message.message_id,
-        undefined,
-        `${bold('🎡 Spin Wheel')}\n\n🎉 ${bold(escapeHtml(reward.label))}\nSpin again right away with /spin!`,
-        HTML
-      );
-      return; // don't set cooldown, so they can spin again immediately
-    }
-
-    cooldowns.useCooldown(chatId, userId, 'spin');
-    const spinItemNote = ITEM_REWARD_KEYS.has(reward.key)
-      ? '\n\n📦 Saved to /inventory — check it here in this group.'
-      : '';
-    await ctx.telegram.editMessageText(
+  if (reward.key === 'extra_spin') {
+    return await ctx.telegram.editMessageText(
       chatId,
       message.message_id,
       undefined,
-      `${bold('🎡 Spin Wheel')}\n\nYou landed on: ${bold(escapeHtml(reward.label))}!${spinItemNote}`,
+      `<blockquote>\n${bold('🎡 Spin Wheel')}\n\n🎉 ${bold(escapeHtml(reward.label))}\nSpin again right away with /spin!\n</blockquote>`,
       HTML
     );
-  });
+  }
 
-  bot.command('chest', async (ctx) => {
-    const chatId = ctx.chat.id;
-    const userId = ctx.from.id;
-    users.getOrCreateUser(chatId, userId, ctx.from.username || ctx.from.first_name);
-
-    const status = cooldowns.checkCooldown(chatId, userId, 'chest', DAY_MS);
-    if (!status.ready) {
-      ctx.reply(
-        `📦 Mystery Chest already opened today. Next chest in ${bold(formatDuration(status.msRemaining))}.`,
-        HTML
-      );
-      return;
-    }
-
-    const reward = weightedPick(CHEST_TABLE);
-    const message = await playSuspense(ctx, CHEST_ICONS, '📦 Opening the Mystery Chest...');
-    applyReward(chatId, userId, reward.key);
-    cooldowns.useCooldown(chatId, userId, 'chest');
-
-    const prefix = reward.key === 'mythical' ? '🎊🎊🎊 JACKPOT! 🎊🎊🎊' : '📦 Mystery Chest';
-    const chestItemNote = ITEM_REWARD_KEYS.has(reward.key)
-      ? '\n\nCheck /inventory (in this group) to see what it does.'
-      : '';
-    await ctx.telegram.editMessageText(
-      chatId,
-      message.message_id,
-      undefined,
-      `${bold(prefix)}\n\nYou got: ${bold(escapeHtml(reward.label))}!${chestItemNote}`,
-      HTML
-    );
-  });
+  cooldowns.useCooldown(chatId, userId, 'spin');
+  const spinItemNote = ITEM_REWARD_KEYS.has(reward.key)
+    ? '\n\n📦 Saved to /inventory — check it here in this group.'
+    : '';
+  return await ctx.telegram.editMessageText(
+    chatId,
+    message.message_id,
+    undefined,
+    `<blockquote>\n${bold('🎡 Spin Wheel')}\n\nYou landed on: ${bold(escapeHtml(reward.label))}!${spinItemNote}\n</blockquote>`,
+    HTML
+  );
 }
 
-module.exports = { register, applyReward, SPIN_ICONS, CHEST_ICONS, ITEM_REWARD_KEYS };
+async function handleChest(ctx) {
+  const chatId = ctx.chat.id;
+  const userId = ctx.from.id;
+  users.getOrCreateUser(chatId, userId, ctx.from.username || ctx.from.first_name);
+
+  const status = cooldowns.checkCooldown(chatId, userId, 'chest', DAY_MS);
+  if (!status.ready) {
+    return ctx.reply(
+      `<blockquote>📦 Mystery Chest already opened today. Next chest in ${bold(formatDuration(status.msRemaining))}.</blockquote>`,
+      HTML
+    );
+  }
+
+  const reward = weightedPick(CHEST_TABLE);
+  const message = await playSuspense(ctx, CHEST_ICONS, '📦 Opening the Mystery Chest...');
+  applyReward(chatId, userId, reward.key);
+  cooldowns.useCooldown(chatId, userId, 'chest');
+
+  const prefix = reward.key === 'mythical' ? '🎊🎊🎊 JACKPOT! 🎊🎊🎊' : '📦 Mystery Chest';
+  const chestItemNote = ITEM_REWARD_KEYS.has(reward.key)
+    ? '\n\nCheck /inventory (in this group) to see what it does.'
+    : '';
+  return await ctx.telegram.editMessageText(
+    chatId,
+    message.message_id,
+    undefined,
+    `<blockquote>\n${bold(prefix)}\n\nYou got: ${bold(escapeHtml(reward.label))}!${chestItemNote}\n</blockquote>`,
+    HTML
+  );
+}
+
+function register(bot) {
+  bot.command('spin', handleSpin);
+  bot.command('chest', handleChest);
+}
+
+module.exports = { register, handleSpin, handleChest, applyReward, SPIN_ICONS, CHEST_ICONS, ITEM_REWARD_KEYS };
