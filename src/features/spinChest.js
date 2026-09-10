@@ -1,17 +1,16 @@
 const users = require('../db/users');
+const streaks = require('../db/streaks');
 const cooldowns = require('../db/cooldowns');
 const inventory = require('../db/inventory');
 const { grantRewards } = require('../utils/rewards');
 const { formatDuration } = require('../utils/format');
-const { escapeHtml, bold, HTML } = require('../utils/text');
+const { escapeHtml, bold, italic, HTML } = require('../utils/text');
 const { SPIN_TABLE, CHEST_TABLE, weightedPick } = require('../data/rewards');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SPIN_ICONS = ['🎰', '💰', '⭐', '🍬', '🥚', '🎫'];
 const CHEST_ICONS = ['📦', '✨', '🎁', '🔑'];
 
-// Reward keys that land in /inventory (as opposed to instant Coins/XP) — used to only
-// show the "check your inventory" note when it's actually relevant.
 const ITEM_REWARD_KEYS = new Set([
   'rare_candy',
   'lucky_egg',
@@ -30,7 +29,6 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Applies a reward's effect (XP/coins/items). Label/announcement is handled by the caller.
 function applyReward(chatId, userId, rewardKey) {
   switch (rewardKey) {
     case 'coins_small':
@@ -81,7 +79,6 @@ function applyReward(chatId, userId, rewardKey) {
       inventory.addItem(userId, 'mythical_reward', 1);
       break;
     case 'extra_spin':
-      // handled by caller (resets cooldown instead of granting an item)
       break;
     default:
       break;
@@ -107,11 +104,15 @@ async function playSuspense(ctx, icons, title) {
 async function handleSpin(ctx) {
   const chatId = ctx.chat.id;
   const userId = ctx.from.id;
-  users.getOrCreateUser(chatId, userId, ctx.from.username || ctx.from.first_name);
+  const username = ctx.from.username || ctx.from.first_name;
+  users.getOrCreateUser(chatId, userId, username);
 
   const status = cooldowns.checkCooldown(chatId, userId, 'spin', DAY_MS);
   if (!status.ready) {
-    return ctx.reply(`<blockquote>🎡 You already spun today. Next spin in ${bold(formatDuration(status.msRemaining))}.</blockquote>`, HTML);
+    return ctx.reply(
+      `<blockquote>\n${bold('🎡 DAILY SPIN')}\n───────────────────────────\n📦 Spin Status: Claimed\n⏳ Next spin available in ${bold(formatDuration(status.msRemaining))}\n</blockquote>`,
+      HTML
+    );
   }
 
   const reward = weightedPick(SPIN_TABLE);
@@ -123,20 +124,42 @@ async function handleSpin(ctx) {
       chatId,
       message.message_id,
       undefined,
-      `<blockquote>\n${bold('🎡 Spin Wheel')}\n\n🎉 ${bold(escapeHtml(reward.label))}\nSpin again right away with /spin!\n</blockquote>`,
+      [
+        '<blockquote>',
+        bold('🎡 DAILY SPIN'),
+        '───────────────────────────',
+        `🎯 ${italic('You landed on...')}`,
+        `🎉 ${bold(escapeHtml(reward.label))}`,
+        `✅ ${italic('Extra Spin Granted! Spin again with /spin!')}`,
+        '</blockquote>',
+      ].join('\n'),
       HTML
     );
   }
 
   cooldowns.useCooldown(chatId, userId, 'spin');
-  const spinItemNote = ITEM_REWARD_KEYS.has(reward.key)
-    ? '\n\n📦 Saved to /inventory — check it here in this group.'
-    : '';
+
+  const profile = users.getProfile(chatId, userId);
+  const streak = streaks.getStreak(chatId, userId);
+  const divider = '───────────────────────────';
+
+  const lines = [
+    bold('🎡 DAILY SPIN'),
+    divider,
+    `🎯 ${italic('You landed on...')}`,
+    `✨ ${bold(escapeHtml(reward.label))}`,
+    `✅ ${italic('Reward successfully added!')}`,
+    `📊 Current XP: ${bold(profile.xp.toLocaleString())}`,
+    `🔥 Streak: ${bold(streak.current_streak + ' Days')}`,
+    divider,
+    `⏳ ${italic('Next spin available in 24h')}`,
+  ];
+
   return await ctx.telegram.editMessageText(
     chatId,
     message.message_id,
     undefined,
-    `<blockquote>\n${bold('🎡 Spin Wheel')}\n\nYou landed on: ${bold(escapeHtml(reward.label))}!${spinItemNote}\n</blockquote>`,
+    `<blockquote>\n${lines.join('\n')}\n</blockquote>`,
     HTML
   );
 }
@@ -144,12 +167,13 @@ async function handleSpin(ctx) {
 async function handleChest(ctx) {
   const chatId = ctx.chat.id;
   const userId = ctx.from.id;
-  users.getOrCreateUser(chatId, userId, ctx.from.username || ctx.from.first_name);
+  const username = ctx.from.username || ctx.from.first_name;
+  users.getOrCreateUser(chatId, userId, username);
 
   const status = cooldowns.checkCooldown(chatId, userId, 'chest', DAY_MS);
   if (!status.ready) {
     return ctx.reply(
-      `<blockquote>📦 Mystery Chest already opened today. Next chest in ${bold(formatDuration(status.msRemaining))}.</blockquote>`,
+      `<blockquote>\n${bold('🎁 MYSTERY CHEST')}\n───────────────────────────\n📦 Chest Status: Claimed\n⏳ Next chest: ${bold(formatDuration(status.msRemaining))}\n</blockquote>`,
       HTML
     );
   }
@@ -159,15 +183,26 @@ async function handleChest(ctx) {
   applyReward(chatId, userId, reward.key);
   cooldowns.useCooldown(chatId, userId, 'chest');
 
-  const prefix = reward.key === 'mythical' ? '🎊🎊🎊 JACKPOT! 🎊🎊🎊' : '📦 Mystery Chest';
-  const chestItemNote = ITEM_REWARD_KEYS.has(reward.key)
-    ? '\n\nCheck /inventory (in this group) to see what it does.'
-    : '';
+  const prefix = reward.key === 'mythical' ? '🎊🎊🎊 JACKPOT! 🎊🎊🎊' : '🎁 MYSTERY CHEST OPENED!';
+  const divider = '───────────────────────────';
+
+  const lines = [
+    bold(prefix),
+    divider,
+    `✨ ${italic('You discovered:')}`,
+    `✨ ${bold(escapeHtml(reward.label))}`,
+    '',
+    `🎉 ${italic('Nice find, Trainer!')}`,
+    divider,
+    `📦 ${italic('Chest Status: Claimed')}`,
+    `⏳ ${italic('Next chest: 24h')}`,
+  ];
+
   return await ctx.telegram.editMessageText(
     chatId,
     message.message_id,
     undefined,
-    `<blockquote>\n${bold(prefix)}\n\nYou got: ${bold(escapeHtml(reward.label))}!${chestItemNote}\n</blockquote>`,
+    `<blockquote>\n${lines.join('\n')}\n</blockquote>`,
     HTML
   );
 }
