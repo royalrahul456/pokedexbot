@@ -7,65 +7,70 @@ const { generateProfileCard } = require('../utils/cardGenerator');
 const { escapeHtml, bold, HTML } = require('../utils/text');
 
 async function showProfile(ctx) {
-  const chatId = ctx.chat.id;
-  const userId = ctx.from.id;
-  const username = ctx.from.username || ctx.from.first_name;
-  users.getOrCreateUser(chatId, userId, username);
-
-  const profile = users.getProfile(chatId, userId);
-  const streak = streaks.getStreak(chatId, userId);
-  const rank = users.getRank(chatId, userId);
-  const equipped = cosmeticsDb.getEquipped(userId);
-
-  // 1. Get User Telegram Avatar URL (with fast 2s timeout safeguard)
-  let avatarUrl = null;
   try {
-    const avatarPromise = (async () => {
-      const photos = await ctx.telegram.getUserProfilePhotos(userId, { limit: 1 });
-      if (photos && photos.total_count > 0 && photos.photos[0] && photos.photos[0].length > 0) {
-        const fileId = photos.photos[0][photos.photos[0].length - 1].file_id;
-        const link = await ctx.telegram.getFileLink(fileId);
-        return typeof link === 'string' ? link : (link.href || link.toString());
+    const chatId = ctx.chat.id;
+    const userId = ctx.from.id;
+    const username = ctx.from.username || ctx.from.first_name;
+    users.getOrCreateUser(chatId, userId, username);
+
+    const profile = users.getProfile(chatId, userId);
+    const streak = streaks.getStreak(chatId, userId);
+    const rank = users.getRank(chatId, userId);
+    const equipped = cosmeticsDb.getEquipped(userId);
+
+    const formattedText = formatProfile(profile, streak, rank, equipped);
+
+    // 1. Get User Telegram Avatar URL (with 2s timeout safeguard)
+    let avatarUrl = null;
+    try {
+      const avatarPromise = (async () => {
+        const photos = await ctx.telegram.getUserProfilePhotos(userId, 0, 1);
+        if (photos && photos.total_count > 0 && photos.photos[0] && photos.photos[0].length > 0) {
+          const fileId = photos.photos[0][photos.photos[0].length - 1].file_id;
+          const link = await ctx.telegram.getFileLink(fileId);
+          return typeof link === 'string' ? link : (link.href || link.toString());
+        }
+        return null;
+      })();
+
+      const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 2000));
+      avatarUrl = await Promise.race([avatarPromise, timeoutPromise]);
+    } catch (err) {
+      // Silent fallback if avatar fetching fails
+    }
+
+    // 2. Get Featured Pokémon (latest caught species, or Pikachu default)
+    let featuredSpeciesName = 'Pikachu';
+    try {
+      const collection = pokemonInstances.listInstances(userId);
+      if (collection && collection.length > 0) {
+        featuredSpeciesName = collection[0].species_name;
       }
-      return null;
-    })();
+    } catch (err) {
+      // Silent fallback
+    }
 
-    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 2000));
-    avatarUrl = await Promise.race([avatarPromise, timeoutPromise]);
-  } catch (err) {
-    // Silent fallback if avatar fetching fails or restricted
-  }
+    // 3. Generate dynamic profile card graphic & reply with photo + text caption
+    try {
+      const cardBuffer = await generateProfileCard({
+        user: profile,
+        streak,
+        rank,
+        avatarUrl,
+        featuredSpeciesName,
+      });
 
-  // 2. Get Featured Pokémon (latest caught species, or Pikachu default)
-  let featuredSpeciesName = 'Pikachu';
-  try {
-    const collection = pokemonInstances.listInstances(userId);
-    if (collection && collection.length > 0) {
-      featuredSpeciesName = collection[0].species_name;
+      return await ctx.replyWithPhoto(
+        { source: cardBuffer, filename: 'profile_card.png' },
+        { caption: formattedText, parse_mode: 'HTML' }
+      );
+    } catch (err) {
+      console.error('Failed to send graphic profile card photo, falling back to text:', err.message || err);
+      return await ctx.reply(formattedText, HTML);
     }
   } catch (err) {
-    // Silent fallback
-  }
-
-  // 3. Generate dynamic profile card graphic
-  try {
-    const cardBuffer = await generateProfileCard({
-      user: profile,
-      streak,
-      rank,
-      avatarUrl,
-      featuredSpeciesName,
-    });
-
-    const caption = `<b>👤 ${escapeHtml(profile.username || 'Trainer')}'s Profile Card</b>\n\nLevel <b>${profile.level}</b> • <b>${(profile.coins || 0).toLocaleString()} Coins</b> • Rank <b>#${rank || 'N/A'}</b>`;
-
-    return await ctx.replyWithPhoto(
-      { source: cardBuffer, filename: 'profile_card.png' },
-      { caption, parse_mode: 'HTML' }
-    );
-  } catch (err) {
-    console.error('Failed to generate image profile card:', err);
-    return ctx.reply(formatProfile(profile, streak, rank, equipped), HTML);
+    console.error('Error in showProfile:', err.message || err);
+    return await ctx.reply('<blockquote>An error occurred while loading your profile. Please try again.</blockquote>', HTML);
   }
 }
 

@@ -270,7 +270,7 @@ async function generateProfileCard({ user, streak, rank, avatarUrl, featuredSpec
   ctx.font = 'bold 20px sans-serif';
   ctx.fillText(`${dexIdStr} ${pokeName}`, rightX + 40, rightY + rightH - 34);
 
-  return await canvas.encode('png');
+  return canvas.toBuffer('image/png');
 }
 
 module.exports = { generateProfileCard };
