@@ -17,20 +17,26 @@ async function showProfile(ctx) {
   const rank = users.getRank(chatId, userId);
   const equipped = cosmeticsDb.getEquipped(userId);
 
-  // 1. Get User Telegram Avatar URL (if accessible)
+  // 1. Get User Telegram Avatar URL (with fast 2s timeout safeguard)
   let avatarUrl = null;
   try {
-    const photos = await ctx.telegram.getUserProfilePhotos(userId, { limit: 1 });
-    if (photos && photos.total_count > 0 && photos.photos[0] && photos.photos[0].length > 0) {
-      const fileId = photos.photos[0][photos.photos[0].length - 1].file_id;
-      const link = await ctx.telegram.getFileLink(fileId);
-      avatarUrl = link.href || link.toString();
-    }
+    const avatarPromise = (async () => {
+      const photos = await ctx.telegram.getUserProfilePhotos(userId, { limit: 1 });
+      if (photos && photos.total_count > 0 && photos.photos[0] && photos.photos[0].length > 0) {
+        const fileId = photos.photos[0][photos.photos[0].length - 1].file_id;
+        const link = await ctx.telegram.getFileLink(fileId);
+        return typeof link === 'string' ? link : (link.href || link.toString());
+      }
+      return null;
+    })();
+
+    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 2000));
+    avatarUrl = await Promise.race([avatarPromise, timeoutPromise]);
   } catch (err) {
-    // Silent fallback if avatar fetching is restricted
+    // Silent fallback if avatar fetching fails or restricted
   }
 
-  // 2. Get Featured Pokémon (latest caught, or Pikachu fallback)
+  // 2. Get Featured Pokémon (latest caught species, or Pikachu default)
   let featuredSpeciesName = 'Pikachu';
   try {
     const collection = pokemonInstances.listInstances(userId);
@@ -54,11 +60,11 @@ async function showProfile(ctx) {
     const caption = `<b>👤 ${escapeHtml(profile.username || 'Trainer')}'s Profile Card</b>\n\nLevel <b>${profile.level}</b> • <b>${(profile.coins || 0).toLocaleString()} Coins</b> • Rank <b>#${rank || 'N/A'}</b>`;
 
     return await ctx.replyWithPhoto(
-      { source: cardBuffer },
+      { source: cardBuffer, filename: 'profile_card.png' },
       { caption, parse_mode: 'HTML' }
     );
   } catch (err) {
-    console.error('Failed to generate image profile card, using text fallback:', err);
+    console.error('Failed to generate image profile card:', err);
     return ctx.reply(formatProfile(profile, streak, rank, equipped), HTML);
   }
 }
